@@ -1,0 +1,5 @@
+# 统一使用 LF，避免不同平台换行符导致整文件 diff
+* text=auto eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+LICENSE text eol=lf
