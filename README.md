@@ -1,5 +1,10 @@
 # OMacro/Downloader 威胁说明与自查清除指南
 
+<p align="right">
+  <a href="README.md"><kbd>🌐 简体中文</kbd></a>
+  <a href="README.en.md"><kbd>English</kbd></a>
+</p>
+
 > 伪装成 Synaptics 触摸板驱动的宏下载器 · 面向普通用户与安全从业者的威胁说明
 > **仅用于防御、自查与清除，不包含任何可用于攻击的内容。**
 
@@ -13,6 +18,7 @@
 | 权限要求 | 普通用户权限即可运行，提权后危害显著放大 |
 | 风险等级 | 高（涉及凭据窃取与远程控制） |
 | 文档状态 | 基于公开情报与实测日志整理，持续修订 |
+| 最后更新 | 2026-11-18 |
 | 许可协议 | [CC BY 4.0](LICENSE) |
 
 ---
@@ -301,6 +307,23 @@ flowchart LR
 - **高度可疑**：多个间接信号吻合，但缺少决定性证据
 - **待观察**：单一弱信号，需继续监控
 
+### 6.9 反向排除：先确认它不是正常组件
+
+本文的特征指向性很强，但只看"路径 + 进程名"很容易误判——把正常驱动删掉会导致触摸板、指纹识别失效。下列情况通常**不属于**该家族，排查时应先排除：
+
+| 观察到的情况 | 更可能的解释 | 下一步 |
+|---|---|---|
+| 位于 `C:\Program Files\Synaptics\SynTP\`，签名者为 Synaptics 或笔记本 OEM | 正常触摸板驱动 | 核对设备管理器中是否有对应硬件 |
+| 进程存在，且设备管理器确实有 Synaptics 触摸板/指纹设备 | 正常预装组件 | 核对签名与版本号即可 |
+| 仅文件名是 `Synaptics.exe`，位于下载目录或桌面 | 用户手动下载的驱动包解压残留 | 查签名、回忆是否主动安装过 |
+| `%TEMP%` 下有 `.xlsm`，但命名有业务含义（如 `报价单2026Q1.xlsm`） | 用户自己的工作文件 | 检查是否含来源不明的宏 |
+| 有有效签名，但机器无对应硬件 | OEM 通用驱动包残留 | 结合启动项与网络行为判断 |
+| 存在外连，但目标为已知的更新服务器 | 正常软件更新 | 核对域名归属 |
+
+**判断原则**：本文的强信号是「路径 + 无签名 + 启动项指向」**三者同时成立**，不是任一单项成立。**只命中"文件名是 Synaptics.exe"这一条，远不足以判定感染。**
+
+另外需要提醒：卸载正常触摸板驱动后，部分笔记本会失去手势、滚动甚至光标功能，恢复需要重新安装 OEM 驱动。**删除前先确认，确认前先备份。**
+
 ---
 
 ## 七、安全的清除步骤
@@ -438,6 +461,8 @@ flowchart LR
 
 以下为一次实际拦截记录（已脱敏），可作为自查时的对照样本。
 
+> **时间口径说明**：日志中的 `2026/11/18 12:01:57` 为**事件实际发生（拦截触发）时间**，与本文档的「最后更新」时间是两个概念。前者用于定位当时的环境与版本，后者仅表示文档最近一次修订日期。后续修订本文时，日志时间戳保持不变。
+
 **杀软日志摘要**
 
 ```
@@ -492,13 +517,16 @@ flowchart LR
 
 ## 附录 C：参考资料
 
-- Trend Micro 关于 `%ProgramData%\Synaptics\Synaptics.exe` 伪装与自启动项的公开分析
-- ANY.RUN 威胁情报中对 XRed 家族行为特征（伪装、自启、宏注入、U 盘传播）的汇总
-- Microsoft 关于 Office 宏安全策略与受信任位置的官方文档
-- Microsoft Sysinternals Autoruns 使用说明
-- 各安全厂商对 `OMacro/Downloader` 系列的命名与描述页面
+| 来源 | 可用内容 | 链接 |
+|---|---|---|
+| Trend Micro Threat Encyclopedia | 记录 `Synaptics Pointing Device Driver = %ProgramData%\Synaptics\Synaptics.exe` 这一自启动项与落地路径，含手工清除步骤 | [Virus.Win32.NAPWHICH.E](https://www.trendmicro.com/vinfo/us/threat-encyclopedia/malware/Virus.Win32.NAPWHICH.E) |
+| ANY.RUN 威胁情报 | XRed 行为汇总：伪装手法、注册表自启、宏注入、U 盘传播、远控命令集 | [XRed](https://any.run/malware-trends/xred/) |
+| Malpedia（Fraunhofer FKIE） | XRed 基础档案：互斥体名称、DDNS 域名、传播方式与能力清单 | [XRed](https://malpedia.caad.fkie.fraunhofer.de/details/win.xred) |
+| eSentire 研究博客 | XRed 原始分析报告，"Synaptics worm" 这一别名的来源 | [XRed Backdoor](https://www.esentire.com/blog/xred-backdoor-the-hidden-threat-in-trojanized-programs) |
+| Microsoft Learn | Office 阻止来自 Internet 的宏运行（组策略与注册表配置） | [Macros from the internet are blocked](https://learn.microsoft.com/en-us/deployoffice/security/internet-macros-blocked) |
+| Microsoft Sysinternals | Autoruns：启动项、计划任务、服务的全量排查工具 | [Autoruns](https://learn.microsoft.com/en-us/sysinternals/downloads/autoruns) |
 
-> 引用上述资料仅用于事实核对。具体结论请以各厂商原文为准。
+> 以上链接于 2026-11-18 逐条核验可访问（HTTP 200）。引用仅用于事实核对，具体结论请以各厂商原文为准。
 
 ---
 
@@ -550,6 +578,23 @@ flowchart LR
 | 已确认 | 路径 + 无签名 + 日志操作进程三者吻合 | 立即按第七章处置 |
 | 高度可疑 | 多个中等信号吻合，缺少决定性证据 | 断网、全盘扫描、做进程取证 |
 | 待观察 | 仅单一弱信号 | 记录并观察 3–7 天 |
+
+### D.6 公开情报中的家族特征（仅供交叉验证）
+
+下列条目来自公开情报对 **XRed** 家族的描述，**并非本文实测样本的结论**。它们只用于交叉验证与编写检测规则，不能单独作为归属依据；若在你的机器上同时命中本文第四章的强信号，则参考价值显著提升。
+
+| 类型 | 值 | 检测/处置用途 |
+|---|---|---|
+| 互斥体（Mutex） | `Synaptics2X` | 限制单实例运行；可用互斥体枚举工具检索 |
+| 通信域名 | `xred.mooo.com` | 硬编码动态域名，可在 DNS / 防火墙层阻断 |
+| U 盘传播内容 | `autorun.inf` 中 `open=Synaptics.exe`、`shellexecute=Synaptics.exe` | 移动存储自查项 |
+| 宏投放到文档目录 | 以 `~$cache1` 命名的隐藏副本 | 文档目录内异常隐藏文件排查 |
+| 信息外传方式 | 通过 SMTP 发送 MAC、用户名、计算机名 | 异常 SMTP 出站流量告警 |
+| 远控命令集 | 截屏、命令行访问、列磁盘、列目录、下载文件、删除文件 | EDR 行为规则编写 |
+
+**为什么不提供文件哈希**
+
+哈希随变种快速变化，且必须与 VirusTotal 等平台上的实际样本对应才有比对价值。本文没有可控的样本来源，因此**不写入任何未经核验的哈希值**——一个错误的哈希比没有哈希更危险，会让人产生"已排除"的错觉。需要哈希时请直接在 VirusTotal 或各厂商 IOC 源中检索，并核验文件大小与首次提交时间。
 
 ---
 
