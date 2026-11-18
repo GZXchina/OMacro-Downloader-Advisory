@@ -100,7 +100,7 @@ C:\ProgramData\Synaptics\Synaptics.exe
 
 ```mermaid
 flowchart LR
-    A["① 落地与驻留<br/>ProgramData\\Synaptics\\Synaptics.exe"]
+    A["① 落地与驻留<br/>%ProgramData% 下的 Synaptics.exe"]
     B["② 投放器 Dropper<br/>反复释放随机名 .xlsm 到 %TEMP%"]
     C["③ 宏下载器<br/>Excel 进程内执行 VBA"]
     D["④ 后门 / 窃密<br/>键盘记录 · 截屏 · 远控"]
